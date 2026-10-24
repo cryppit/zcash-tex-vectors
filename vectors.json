@@ -1,0 +1,259 @@
+{
+ "name": "ZIP 320 TEX address test vectors",
+ "spec": "https://zips.z.cash/zip-0320",
+ "version": 1,
+ "errors": {
+  "invalid-char": "a character outside the Bech32 (or Base58) alphabet",
+  "mixed-case": "upper and lower case mixed (BIP 173 forbids it; all-uppercase is allowed)",
+  "too-long": "longer than 90 characters",
+  "no-separator": "no '1' separator, or an empty HRP",
+  "too-short": "fewer than 6 characters after the separator",
+  "bad-checksum": "the checksum matches neither Bech32 nor Bech32m (or the Base58Check checksum is wrong)",
+  "unknown-hrp": "the HRP is not tex, textest or texregtest",
+  "not-bech32m": "a Bech32 checksum where ZIP 320 requires Bech32m",
+  "bad-padding": "non-zero or excess padding bits",
+  "bad-length": "the payload is not 20 bytes (or the transparent address is not 22 bytes)",
+  "not-p2pkh": "a P2SH address: ZIP 320 defines TEX for P2PKH only",
+  "unknown-prefix": "not a Zcash transparent address prefix"
+ },
+ "fields": {
+  "decode": "input is a TEX address; expect gives network, the 20-byte pubkey_hash (hex), its transparent P2PKH form and the scriptPubKey a payment must use",
+  "from_transparent": "input is a transparent address; expect gives the TEX form",
+  "error": "a category, not a message: implementations word errors differently, but each invalid input must be rejected"
+ },
+ "cases": [
+  {
+   "id": "zip320-mainnet",
+   "direction": "decode",
+   "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgte",
+   "description": "The ZIP 320 reference vector.",
+   "expect": {
+    "valid": true,
+    "network": "main",
+    "pubkey_hash": "8286bf790866805397e3a947640b77a43f0b43a5",
+    "transparent": "t1VmmGiyjVNeCjxDZzg7vZmd99WyzVby9yC",
+    "script_pubkey": "76a9148286bf790866805397e3a947640b77a43f0b43a588ac"
+   }
+  },
+  {
+   "id": "zip320-key-testnet",
+   "direction": "decode",
+   "input": "textest1s2rt77ggv6q989lr49rkgzmh5slsksa90ej7wz",
+   "description": "The same key hash on Testnet (HRP textest; P2PKH prefix 0x1D25, tm...).",
+   "expect": {
+    "valid": true,
+    "network": "test",
+    "pubkey_hash": "8286bf790866805397e3a947640b77a43f0b43a5",
+    "transparent": "tmMcWbZU8t39htCR1fQRfRSHtkW4p3Ax5Se",
+    "script_pubkey": "76a9148286bf790866805397e3a947640b77a43f0b43a588ac"
+   }
+  },
+  {
+   "id": "zip320-key-regtest",
+   "direction": "decode",
+   "input": "texregtest1s2rt77ggv6q989lr49rkgzmh5slsksa990zqpk",
+   "description": "Regtest (HRP texregtest). Not in ZIP 320: the librustzcash and Zebra convention. Its P2PKH form uses the Testnet prefix.",
+   "expect": {
+    "valid": true,
+    "network": "regtest",
+    "pubkey_hash": "8286bf790866805397e3a947640b77a43f0b43a5",
+    "transparent": "tmMcWbZU8t39htCR1fQRfRSHtkW4p3Ax5Se",
+    "script_pubkey": "76a9148286bf790866805397e3a947640b77a43f0b43a588ac"
+   },
+   "optional": true
+  },
+  {
+   "id": "uppercase-mainnet",
+   "direction": "decode",
+   "input": "TEX1S2RT77GGV6Q989LR49RKGZMH5SLSKSA9KHDGTE",
+   "description": "All-uppercase is valid Bech32m and must decode; encoders output lowercase.",
+   "expect": {
+    "valid": true,
+    "network": "main",
+    "pubkey_hash": "8286bf790866805397e3a947640b77a43f0b43a5",
+    "transparent": "t1VmmGiyjVNeCjxDZzg7vZmd99WyzVby9yC",
+    "script_pubkey": "76a9148286bf790866805397e3a947640b77a43f0b43a588ac"
+   }
+  },
+  {
+   "id": "zero-hash-mainnet",
+   "direction": "decode",
+   "input": "tex1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xvlx7",
+   "description": "Edge value: an all-zero key hash.",
+   "expect": {
+    "valid": true,
+    "network": "main",
+    "pubkey_hash": "0000000000000000000000000000000000000000",
+    "transparent": "t1Hsc1LR8yKnbbe3twRp88p6vFfC5t7DLbs",
+    "script_pubkey": "76a914000000000000000000000000000000000000000088ac"
+   }
+  },
+  {
+   "id": "ff-hash-testnet",
+   "direction": "decode",
+   "input": "textest1llllllllllllllllllllllllllllllllyejxy0",
+   "description": "Edge value: an all-0xff key hash.",
+   "expect": {
+    "valid": true,
+    "network": "test",
+    "pubkey_hash": "ffffffffffffffffffffffffffffffffffffffff",
+    "transparent": "tmZ3xKHCq5AkyZKPRdaTBUc3TV9Xqy8fet6",
+    "script_pubkey": "76a914ffffffffffffffffffffffffffffffffffffffff88ac"
+   }
+  },
+  {
+   "id": "bech32-not-bech32m",
+   "direction": "decode",
+   "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9rtaywm",
+   "description": "The right payload with a Bech32 (BIP 173) checksum. ZIP 320 requires Bech32m.",
+   "expect": {
+    "valid": false,
+    "error": "not-bech32m"
+   }
+  },
+  {
+   "id": "payload-19-bytes",
+   "direction": "decode",
+   "input": "tex1s2rt77ggv6q989lr49rkgzmh5slskscxv8q42",
+   "description": "A valid Bech32m string whose payload is 19 bytes.",
+   "expect": {
+    "valid": false,
+    "error": "bad-length"
+   }
+  },
+  {
+   "id": "payload-21-bytes",
+   "direction": "decode",
+   "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9qqf37tgt",
+   "description": "A valid Bech32m string whose payload is 21 bytes.",
+   "expect": {
+    "valid": false,
+    "error": "bad-length"
+   }
+  },
+  {
+   "id": "payload-with-prefix",
+   "direction": "decode",
+   "input": "tex1rjug9p4l0yyxdqznjl36j3mypdm6g0ctgwjsfe3q96",
+   "description": "A common bug: encoding the 22-byte Base58 payload (prefix included) instead of the 20-byte hash.",
+   "expect": {
+    "valid": false,
+    "error": "bad-length"
+   }
+  },
+  {
+   "id": "payload-empty",
+   "direction": "decode",
+   "input": "tex156uev0",
+   "description": "HRP and checksum only.",
+   "expect": {
+    "valid": false,
+    "error": "bad-length"
+   }
+  },
+  {
+   "id": "mixed-case",
+   "direction": "decode",
+   "input": "tex1S2rt77ggv6q989lr49rkgzmh5slsksa9khdgte",
+   "description": "One uppercase character: must be rejected.",
+   "expect": {
+    "valid": false,
+    "error": "mixed-case"
+   }
+  },
+  {
+   "id": "checksum-typo",
+   "direction": "decode",
+   "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgtf",
+   "description": "The last character changed: the checksum fails.",
+   "expect": {
+    "valid": false,
+    "error": "bad-checksum"
+   }
+  },
+  {
+   "id": "invalid-character",
+   "direction": "decode",
+   "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgtb",
+   "description": "'b' is not in the Bech32 alphabet.",
+   "expect": {
+    "valid": false,
+    "error": "invalid-char"
+   }
+  },
+  {
+   "id": "no-separator",
+   "direction": "decode",
+   "input": "texs2rt77ggv6q989lr49rkgzmh5slsksa9khdgte",
+   "description": "The '1' separator removed.",
+   "expect": {
+    "valid": false,
+    "error": "no-separator"
+   }
+  },
+  {
+   "id": "unknown-hrp",
+   "direction": "decode",
+   "input": "textestnet1s2rt77ggv6q989lr49rkgzmh5slsksa9gjvfrq",
+   "description": "A plausible but wrong HRP; only tex, textest and texregtest are TEX.",
+   "expect": {
+    "valid": false,
+    "error": "unknown-hrp"
+   }
+  },
+  {
+   "id": "too-long",
+   "direction": "decode",
+   "input": "tex1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq4jlx23",
+   "description": "Over the 90-character limit, which ZIP 320 keeps (ZIP 316 unified addresses drop it).",
+   "expect": {
+    "valid": false,
+    "error": "too-long"
+   }
+  },
+  {
+   "id": "zip320-t1-to-tex",
+   "direction": "from_transparent",
+   "input": "t1VmmGiyjVNeCjxDZzg7vZmd99WyzVby9yC",
+   "description": "The ZIP 320 reference vector, t1 to tex.",
+   "expect": {
+    "valid": true,
+    "network": "main",
+    "tex": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgte",
+    "pubkey_hash": "8286bf790866805397e3a947640b77a43f0b43a5"
+   }
+  },
+  {
+   "id": "testnet-tm-to-textest",
+   "direction": "from_transparent",
+   "input": "tmMcWbZU8t39htCR1fQRfRSHtkW4p3Ax5Se",
+   "description": "A Testnet P2PKH address to textest.",
+   "expect": {
+    "valid": true,
+    "network": "test",
+    "tex": "textest1s2rt77ggv6q989lr49rkgzmh5slsksa90ej7wz",
+    "pubkey_hash": "8286bf790866805397e3a947640b77a43f0b43a5"
+   }
+  },
+  {
+   "id": "p2sh-has-no-tex",
+   "direction": "from_transparent",
+   "input": "t3WTnCGUB3Gxaq7v17mnWzPz5J3Gi8q95vs",
+   "description": "A Mainnet P2SH (t3...) address: ZIP 320 defines TEX for P2PKH only.",
+   "expect": {
+    "valid": false,
+    "error": "not-p2pkh"
+   }
+  },
+  {
+   "id": "t1-bad-checksum",
+   "direction": "from_transparent",
+   "input": "t1VmmGiyjVNeCjxDZzg7vZmd99WyzVby9yD",
+   "description": "The ZIP 320 t1 address with its last character changed.",
+   "expect": {
+    "valid": false,
+    "error": "bad-checksum"
+   }
+  }
+ ]
+}
