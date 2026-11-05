@@ -27,7 +27,7 @@ and `expect`:
 - invalid: `error`, a category (see `errors` in the file). Implementations word errors differently; what matters is
   that each invalid input is rejected.
 
-21 cases: 8 valid (one optional) and 13 invalid, including a Bech32 checksum where Bech32m is required, 19-, 21- and
+21 cases: 8 valid (two optional) and 13 invalid, including a Bech32 checksum where Bech32m is required, 19-, 21- and
 22-byte payloads (the last is the common bug of encoding the Base58 payload with its prefix), mixed case, a checksum
 typo, a character outside the alphabet, a wrong HRP, the 90-character limit, and a P2SH address, which has no TEX form.
 
@@ -35,7 +35,8 @@ The Testnet and Regtest strings match the ones in Zebra's tests, which were chec
 
 ## Checklist for integrators
 
-1. **Parse** all valid cases and reject all invalid ones. Accept all-uppercase; reject mixed case.
+1. **Parse** all required valid cases and reject all invalid ones. Reject mixed case. All-uppercase is optional: BIP 173
+   allows it, ZIP 320 does not mention it, and `zcash_address` 0.14.0 and Zebra reject it.
 2. **Display** a TEX address as `tex1…`, never as the `t1…` form of the same key hash, and keep showing it that way in
    transaction history.
 3. **Pay** to the P2PKH script of the key hash, never an empty or other script.

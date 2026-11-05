@@ -198,7 +198,7 @@ def build_vectors() -> dict:
         ("decode", "zip320-mainnet", zip_tex, "The ZIP 320 reference vector."),
         ("decode", "zip320-key-testnet", enc("textest", k, "bech32m"), "The same key hash on Testnet (HRP textest; P2PKH prefix 0x1D25, tm...)."),
         ("decode", "zip320-key-regtest", enc("texregtest", k, "bech32m"), "Regtest (HRP texregtest). Not in ZIP 320: the librustzcash and Zebra convention. Its P2PKH form uses the Testnet prefix."),
-        ("decode", "uppercase-mainnet", zip_tex.upper(), "All-uppercase is valid Bech32m and must decode; encoders output lowercase."),
+        ("decode", "uppercase-mainnet", zip_tex.upper(), "All-uppercase is valid Bech32m, but ZIP 320 does not require it and zcash_address 0.14.0 and Zebra reject it. Encoders output lowercase."),
         ("decode", "zero-hash-mainnet", enc("tex", bytes(20), "bech32m"), "Edge value: an all-zero key hash."),
         ("decode", "ff-hash-testnet", enc("textest", b"\xff" * 20, "bech32m"), "Edge value: an all-0xff key hash."),
         ("decode", "bech32-not-bech32m", enc("tex", k, "bech32"), "The right payload with a Bech32 (BIP 173) checksum. ZIP 320 requires Bech32m."),
@@ -222,6 +222,8 @@ def build_vectors() -> dict:
         c["expect"] = run_case(c)
         if c["id"] == "zip320-key-regtest":
             c["optional"] = True  # not in ZIP 320; a Mainnet/Testnet-only consumer may treat it as unknown
+        if c["id"] == "uppercase-mainnet":
+            c["optional"] = True  # BIP 173 allows it; ZIP 320 is silent, and implementations differ
     return {
         "name": "ZIP 320 TEX address test vectors",
         "spec": "https://zips.z.cash/zip-0320",

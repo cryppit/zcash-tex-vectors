@@ -66,14 +66,15 @@
    "id": "uppercase-mainnet",
    "direction": "decode",
    "input": "TEX1S2RT77GGV6Q989LR49RKGZMH5SLSKSA9KHDGTE",
-   "description": "All-uppercase is valid Bech32m and must decode; encoders output lowercase.",
+   "description": "All-uppercase is valid Bech32m, but ZIP 320 does not require it and zcash_address 0.14.0 and Zebra reject it. Encoders output lowercase.",
    "expect": {
     "valid": true,
     "network": "main",
     "pubkey_hash": "8286bf790866805397e3a947640b77a43f0b43a5",
     "transparent": "t1VmmGiyjVNeCjxDZzg7vZmd99WyzVby9yC",
     "script_pubkey": "76a9148286bf790866805397e3a947640b77a43f0b43a588ac"
-   }
+   },
+   "optional": true
   },
   {
    "id": "zero-hash-mainnet",
