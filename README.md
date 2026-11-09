@@ -53,7 +53,7 @@ The Testnet and Regtest strings match the ones in Zebra's tests, which were chec
 | Zebra | `Address::script()` returned an empty script for TEX (fix open) | [#11894](https://github.com/ZcashFoundation/zebra/pull/11894) |
 | xchainjs `zcash-js` | Rejected valid `tex1` recipients (fixed) | [#1782](https://github.com/xchainjs/xchainjs-lib/issues/1782), [#1783](https://github.com/xchainjs/xchainjs-lib/pull/1783) |
 | Keystone firmware | A TEX output fails the transparent output address check | [#2313](https://github.com/KeystoneHQ/keystone3-firmware/issues/2313) |
-| zecblock explorer | Reports TEX as an invalid transparent address | [#136](https://github.com/Kenbak/zecblock/issues/136) |
+| zecblock explorer | Reported TEX as an invalid transparent address (fixed) | [#136](https://github.com/Kenbak/zecblock/issues/136), [#284](https://github.com/Kenbak/zecblock/pull/284) |
 
 ## Use it
 
@@ -69,7 +69,7 @@ python3 tex.py                    # regenerates vectors.json
 ## Disclosure
 
 Maintained by [Cryppit](https://github.com/cryppit), which reported Zebra #11826 (and wrote #11880), Keystone #2313 and
-zecblock #136. Corrections are welcome as issues.
+zecblock #136 (and wrote the fix, merged through #284). Corrections are welcome as issues.
 
 ## Licence
 
