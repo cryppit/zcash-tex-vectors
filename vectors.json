@@ -1,7 +1,7 @@
 {
  "name": "ZIP 320 TEX address test vectors",
  "spec": "https://zips.z.cash/zip-0320",
- "version": 1,
+ "version": 2,
  "errors": {
   "invalid-char": "a character outside the Bech32 (or Base58) alphabet",
   "mixed-case": "upper and lower case mixed (BIP 173 forbids it; all-uppercase is allowed)",
@@ -14,9 +14,11 @@
   "bad-padding": "non-zero or excess padding bits",
   "bad-length": "the payload is not 20 bytes (or the transparent address is not 22 bytes)",
   "not-p2pkh": "a P2SH address: ZIP 320 defines TEX for P2PKH only",
-  "unknown-prefix": "not a Zcash transparent address prefix"
+  "unknown-prefix": "not a Zcash transparent address prefix",
+  "wrong-network": "a valid address, but for a different network than the one the consumer is using"
  },
  "fields": {
+  "consumer_network": "the network of the consumer (main, test or regtest): the same string is valid on one network and wrong-network on the others",
   "decode": "input is a TEX address; expect gives network, the 20-byte pubkey_hash (hex), its transparent P2PKH form and the scriptPubKey a payment must use",
   "from_transparent": "input is a transparent address; expect gives the TEX form",
   "error": "a category, not a message: implementations word errors differently, but each invalid input must be rejected"
@@ -25,6 +27,7 @@
   {
    "id": "zip320-mainnet",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgte",
    "description": "The ZIP 320 reference vector.",
    "expect": {
@@ -38,6 +41,7 @@
   {
    "id": "zip320-key-testnet",
    "direction": "decode",
+   "consumer_network": "test",
    "input": "textest1s2rt77ggv6q989lr49rkgzmh5slsksa90ej7wz",
    "description": "The same key hash on Testnet (HRP textest; P2PKH prefix 0x1D25, tm...).",
    "expect": {
@@ -51,6 +55,7 @@
   {
    "id": "zip320-key-regtest",
    "direction": "decode",
+   "consumer_network": "regtest",
    "input": "texregtest1s2rt77ggv6q989lr49rkgzmh5slsksa990zqpk",
    "description": "Regtest (HRP texregtest). Not in ZIP 320: the librustzcash and Zebra convention. Its P2PKH form uses the Testnet prefix.",
    "expect": {
@@ -65,6 +70,7 @@
   {
    "id": "uppercase-mainnet",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "TEX1S2RT77GGV6Q989LR49RKGZMH5SLSKSA9KHDGTE",
    "description": "All-uppercase is valid Bech32m, but ZIP 320 does not require it and zcash_address 0.14.0 and Zebra reject it. Encoders output lowercase.",
    "expect": {
@@ -79,6 +85,7 @@
   {
    "id": "zero-hash-mainnet",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xvlx7",
    "description": "Edge value: an all-zero key hash.",
    "expect": {
@@ -92,6 +99,7 @@
   {
    "id": "ff-hash-testnet",
    "direction": "decode",
+   "consumer_network": "test",
    "input": "textest1llllllllllllllllllllllllllllllllyejxy0",
    "description": "Edge value: an all-0xff key hash.",
    "expect": {
@@ -105,6 +113,7 @@
   {
    "id": "bech32-not-bech32m",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9rtaywm",
    "description": "The right payload with a Bech32 (BIP 173) checksum. ZIP 320 requires Bech32m.",
    "expect": {
@@ -115,6 +124,7 @@
   {
    "id": "payload-19-bytes",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex1s2rt77ggv6q989lr49rkgzmh5slskscxv8q42",
    "description": "A valid Bech32m string whose payload is 19 bytes.",
    "expect": {
@@ -125,6 +135,7 @@
   {
    "id": "payload-21-bytes",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9qqf37tgt",
    "description": "A valid Bech32m string whose payload is 21 bytes.",
    "expect": {
@@ -135,6 +146,7 @@
   {
    "id": "payload-with-prefix",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex1rjug9p4l0yyxdqznjl36j3mypdm6g0ctgwjsfe3q96",
    "description": "A common bug: encoding the 22-byte Base58 payload (prefix included) instead of the 20-byte hash.",
    "expect": {
@@ -145,6 +157,7 @@
   {
    "id": "payload-empty",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex156uev0",
    "description": "HRP and checksum only.",
    "expect": {
@@ -153,8 +166,20 @@
    }
   },
   {
+   "id": "excess-padding",
+   "direction": "decode",
+   "consumer_network": "main",
+   "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9qsjp53u",
+   "description": "The ZIP 320 key hash plus one extra all-zero 5-bit group. ZIP 173 allows at most 4 padding bits, so this must be rejected; a decoder that drops leftover bits reads the same key hash from a second string (librustzcash #3223).",
+   "expect": {
+    "valid": false,
+    "error": "bad-padding"
+   }
+  },
+  {
    "id": "mixed-case",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex1S2rt77ggv6q989lr49rkgzmh5slsksa9khdgte",
    "description": "One uppercase character: must be rejected.",
    "expect": {
@@ -165,6 +190,7 @@
   {
    "id": "checksum-typo",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgtf",
    "description": "The last character changed: the checksum fails.",
    "expect": {
@@ -175,6 +201,7 @@
   {
    "id": "invalid-character",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgtb",
    "description": "'b' is not in the Bech32 alphabet.",
    "expect": {
@@ -183,8 +210,20 @@
    }
   },
   {
+   "id": "non-ascii-character",
+   "direction": "decode",
+   "consumer_network": "main",
+   "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgt\u0435",
+   "description": "The last character replaced by a Cyrillic letter that looks like 'e'. Only US-ASCII characters 33-126 are allowed.",
+   "expect": {
+    "valid": false,
+    "error": "invalid-char"
+   }
+  },
+  {
    "id": "no-separator",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "texs2rt77ggv6q989lr49rkgzmh5slsksa9khdgte",
    "description": "The '1' separator removed.",
    "expect": {
@@ -193,8 +232,20 @@
    }
   },
   {
+   "id": "too-short",
+   "direction": "decode",
+   "consumer_network": "main",
+   "input": "tex1qqqqq",
+   "description": "Fewer than 6 characters after the separator, so there is no room for the checksum.",
+   "expect": {
+    "valid": false,
+    "error": "too-short"
+   }
+  },
+  {
    "id": "unknown-hrp",
    "direction": "decode",
+   "consumer_network": "main",
    "input": "textestnet1s2rt77ggv6q989lr49rkgzmh5slsksa9gjvfrq",
    "description": "A plausible but wrong HRP; only tex, textest and texregtest are TEX.",
    "expect": {
@@ -203,18 +254,42 @@
    }
   },
   {
-   "id": "too-long",
+   "id": "testnet-tex-on-mainnet",
    "direction": "decode",
-   "input": "tex1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq4jlx23",
-   "description": "Over the 90-character limit, which ZIP 320 keeps (ZIP 316 unified addresses drop it).",
+   "consumer_network": "main",
+   "input": "textest1s2rt77ggv6q989lr49rkgzmh5slsksa90ej7wz",
+   "description": "A valid Testnet TEX address given to a Mainnet consumer.",
    "expect": {
     "valid": false,
-    "error": "too-long"
+    "error": "wrong-network"
+   }
+  },
+  {
+   "id": "mainnet-tex-on-testnet",
+   "direction": "decode",
+   "consumer_network": "test",
+   "input": "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgte",
+   "description": "A valid Mainnet TEX address given to a Testnet consumer.",
+   "expect": {
+    "valid": false,
+    "error": "wrong-network"
+   }
+  },
+  {
+   "id": "regtest-tex-on-mainnet",
+   "direction": "decode",
+   "consumer_network": "main",
+   "input": "texregtest1s2rt77ggv6q989lr49rkgzmh5slsksa990zqpk",
+   "description": "A valid Regtest TEX address given to a Mainnet consumer.",
+   "expect": {
+    "valid": false,
+    "error": "wrong-network"
    }
   },
   {
    "id": "zip320-t1-to-tex",
    "direction": "from_transparent",
+   "consumer_network": "main",
    "input": "t1VmmGiyjVNeCjxDZzg7vZmd99WyzVby9yC",
    "description": "The ZIP 320 reference vector, t1 to tex.",
    "expect": {
@@ -227,6 +302,7 @@
   {
    "id": "testnet-tm-to-textest",
    "direction": "from_transparent",
+   "consumer_network": "test",
    "input": "tmMcWbZU8t39htCR1fQRfRSHtkW4p3Ax5Se",
    "description": "A Testnet P2PKH address to textest.",
    "expect": {
@@ -237,8 +313,23 @@
    }
   },
   {
+   "id": "regtest-tm-to-texregtest",
+   "direction": "from_transparent",
+   "consumer_network": "regtest",
+   "input": "tmMcWbZU8t39htCR1fQRfRSHtkW4p3Ax5Se",
+   "description": "On Regtest the same tm... address converts to texregtest, because Regtest shares the Testnet P2PKH prefix.",
+   "expect": {
+    "valid": true,
+    "network": "regtest",
+    "tex": "texregtest1s2rt77ggv6q989lr49rkgzmh5slsksa990zqpk",
+    "pubkey_hash": "8286bf790866805397e3a947640b77a43f0b43a5"
+   },
+   "optional": true
+  },
+  {
    "id": "p2sh-has-no-tex",
    "direction": "from_transparent",
+   "consumer_network": "main",
    "input": "t3WTnCGUB3Gxaq7v17mnWzPz5J3Gi8q95vs",
    "description": "A Mainnet P2SH (t3...) address: ZIP 320 defines TEX for P2PKH only.",
    "expect": {
@@ -247,8 +338,42 @@
    }
   },
   {
+   "id": "testnet-p2sh-has-no-tex",
+   "direction": "from_transparent",
+   "consumer_network": "test",
+   "input": "t2JSyEwaJujZxNpVk3WnZY2AiQXVt1MoMjB",
+   "description": "A Testnet P2SH (t2...) address: no TEX form either.",
+   "expect": {
+    "valid": false,
+    "error": "not-p2pkh"
+   }
+  },
+  {
+   "id": "tm-on-mainnet",
+   "direction": "from_transparent",
+   "consumer_network": "main",
+   "input": "tmMcWbZU8t39htCR1fQRfRSHtkW4p3Ax5Se",
+   "description": "A valid Testnet P2PKH address given to a Mainnet consumer.",
+   "expect": {
+    "valid": false,
+    "error": "wrong-network"
+   }
+  },
+  {
+   "id": "unknown-prefix",
+   "direction": "from_transparent",
+   "consumer_network": "main",
+   "input": "t1u7NFqH2CZ75ZPMf26TF3ttvn2EwEU795i",
+   "description": "Looks like a t1 address, but its 2-byte prefix is 0x1CB9 (one off from t1's 0x1CB8), which is not a Zcash transparent prefix. Catches validators that only check for a leading t1.",
+   "expect": {
+    "valid": false,
+    "error": "unknown-prefix"
+   }
+  },
+  {
    "id": "t1-bad-checksum",
    "direction": "from_transparent",
+   "consumer_network": "main",
    "input": "t1VmmGiyjVNeCjxDZzg7vZmd99WyzVby9yD",
    "description": "The ZIP 320 t1 address with its last character changed.",
    "expect": {

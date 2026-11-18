@@ -19,24 +19,39 @@ TEX address from it in a second.
 
 ## The vectors
 
-Each case has an `id`, a `direction` (`decode`: TEX in; `from_transparent`: a t-address in), the `input`, a description
-and `expect`:
+Each case has an `id`, a `direction` (`decode`: TEX in; `from_transparent`: a t-address in), the `consumer_network`
+(`main`, `test` or `regtest`: the network of the wallet or service checking the input), the `input`, a description and
+`expect`. The same string can be valid for one network and `wrong-network` for another, so check each case on its
+`consumer_network`. (Version 2 of the file added `consumer_network`; version 1 had no network context.)
 
 - valid `decode`: `network`, `pubkey_hash` (hex), the `transparent` P2PKH form and the `script_pubkey`;
 - valid `from_transparent`: `network`, `tex` and `pubkey_hash`;
 - invalid: `error`, a category (see `errors` in the file). Implementations word errors differently; what matters is
   that each invalid input is rejected.
 
-21 cases: 8 valid (two optional) and 13 invalid, including a Bech32 checksum where Bech32m is required, 19-, 21- and
-22-byte payloads (the last is the common bug of encoding the Base58 payload with its prefix), mixed case, a checksum
-typo, a character outside the alphabet, a wrong HRP, the 90-character limit, and a P2SH address, which has no TEX form.
+30 cases: 9 valid (three optional) and 21 invalid. The invalid ones cover a Bech32 checksum where Bech32m is required,
+19-, 21- and 22-byte and empty payloads (the 22-byte one is the common bug of encoding the Base58 payload with its
+prefix), excess padding (the right key hash plus one extra 5-bit group, which a decoder that drops leftover bits accepts
+as the same address), mixed case, a checksum typo, a character outside the alphabet, a non-ASCII look-alike character, a
+missing separator, a too-short string, a wrong HRP, a valid address for another network (decoded and converted), a P2SH
+address on Mainnet and Testnet, which has no TEX form, a t1-looking address with an unknown prefix, and a Base58
+checksum error.
+
+Each invalid case fails for exactly one reason. There is no case for the 90-character limit: a TEX string over 90
+characters always also has the wrong payload length, and a valid TEX address is exactly 42 (`tex`), 46 (`textest`) or
+49 (`texregtest`) characters long. The codec still enforces the limit.
+
+The all-uppercase case is `optional` because ZIP 320 does not say whether it must decode: ZIP 173 implies yes (QR codes
+should use uppercase) and the JavaScript reference code accepts it, but `zcash_address` and Zebra reject it. It will
+follow whatever the ZIP's Owners decide.
 
 The Testnet and Regtest strings match the ones in Zebra's tests, which were checked against `zcash_address`.
 
 ## Checklist for integrators
 
-1. **Parse** all required valid cases and reject all invalid ones. Reject mixed case. All-uppercase is optional: BIP 173
-   allows it, ZIP 320 does not mention it, and `zcash_address` 0.14.0 and Zebra reject it.
+1. **Parse** all required valid cases and reject all invalid ones, each on its `consumer_network`. Reject mixed case.
+   All-uppercase is optional: BIP 173 allows it, ZIP 320 does not mention it, and `zcash_address` 0.14.0 and Zebra
+   reject it.
 2. **Display** a TEX address as `tex1…`, never as the `t1…` form of the same key hash, and keep showing it that way in
    transaction history.
 3. **Pay** to the P2PKH script of the key hash, never an empty or other script.
@@ -45,12 +60,21 @@ The Testnet and Regtest strings match the ones in Zebra's tests, which were chec
 6. **Look up:** a node or explorer queried with a TEX address should answer for the underlying P2PKH address (Zebra 7.0.0
    returns an error for TEX in address queries, so query the P2PKH form).
 
+## What these vectors do not test
+
+They test addresses, not transactions. Passing them does not show that a wallet follows ZIP 320's main rule, spending
+only transparent inputs when paying a TEX address, or that it builds the two-step payment from shielded funds correctly,
+shows the TEX form in its history, or signs correctly on a hardware wallet. Check those against items 2–5 of the
+checklist and the ZIP itself.
+
 ## Bugs these cases would have caught (2026)
 
 | Where | What | Link |
 |---|---|---|
 | Zebra | `Display` printed TEX as the `t1…` address (fixed) | [#11826](https://github.com/ZcashFoundation/zebra/issues/11826), [#11880](https://github.com/ZcashFoundation/zebra/pull/11880) |
 | Zebra | `Address::script()` returned an empty script for TEX (fix open) | [#11894](https://github.com/ZcashFoundation/zebra/pull/11894) |
+| Zebra | Accepted a TEX address with a Bech32 checksum (fixed on `next`) | [#12254](https://github.com/ZcashFoundation/zebra/issues/12254), [#12360](https://github.com/ZcashFoundation/zebra/pull/12360) |
+| librustzcash `zcash_address` | Accepts non-canonical (excess) padding, so a second string decodes to the same address (open) | [#3223](https://github.com/zcash/librustzcash/issues/3223) |
 | xchainjs `zcash-js` | Rejected valid `tex1` recipients (fixed) | [#1782](https://github.com/xchainjs/xchainjs-lib/issues/1782), [#1783](https://github.com/xchainjs/xchainjs-lib/pull/1783) |
 | Keystone firmware | A TEX output fails the transparent output address check | [#2313](https://github.com/KeystoneHQ/keystone3-firmware/issues/2313) |
 | zecblock explorer | Reported TEX as an invalid transparent address (fixed) | [#136](https://github.com/Kenbak/zecblock/issues/136), [#284](https://github.com/Kenbak/zecblock/pull/284) |
@@ -68,8 +92,8 @@ python3 tex.py                    # regenerates vectors.json
 
 ## Disclosure
 
-Maintained by [Cryppit](https://github.com/cryppit), which reported Zebra #11826 (and wrote #11880), Keystone #2313 and
-zecblock #136 (and wrote the fix, merged through #284). Corrections are welcome as issues.
+Maintained by [Cryppit](https://github.com/cryppit), which reported Zebra #11826 (and wrote #11880) and #12254, Keystone
+#2313 and zecblock #136 (and wrote the fix, merged through #284). Corrections are welcome as issues.
 
 ## Licence
 

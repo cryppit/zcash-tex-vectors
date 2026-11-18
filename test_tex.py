@@ -14,7 +14,7 @@ ZIP320_TEX = "tex1s2rt77ggv6q989lr49rkgzmh5slsksa9khdgte"
 
 class Zip320Vector(unittest.TestCase):
     def test_t1_to_tex_matches_the_zip(self):
-        self.assertEqual(tex.tex_from_transparent(ZIP320_T1), ZIP320_TEX)
+        self.assertEqual(tex.tex_from_transparent(ZIP320_T1, "main"), ZIP320_TEX)
 
     def test_tex_to_t1_matches_the_zip(self):
         d = tex.decode_tex(ZIP320_TEX)
@@ -56,14 +56,53 @@ class Errors(unittest.TestCase):
         self.assertEqual(tex.decode_tex(tex.bech32_encode("textest", pkh, "bech32m"))["network"], "test")
         self.assertEqual(tex.decode_tex(tex.bech32_encode("texregtest", pkh, "bech32m"))["network"], "regtest")
 
+    def test_excess_padding(self):
+        # ZIP 173: an incomplete group at the end must be 4 bits or fewer and all zero. A 20-byte payload fills exactly
+        # 32 groups, so one more group (even all zero) is excess padding. A decoder that drops leftover bits would read
+        # the same key hash from a second string (librustzcash #3223).
+        pkh = tex.decode_tex(ZIP320_TEX)["pubkey_hash"]
+        data = tex._convertbits(pkh, 8, 5, True) + [0]
+        self.assertEqual(self.err(tex.bech32_encode_data("tex", data, "bech32m")), "bad-padding")
+
     def test_too_long(self):
         self.assertEqual(self.err(tex.bech32_encode("tex", bytes(60), "bech32m")), "too-long")
 
     def test_p2sh_has_no_tex_form(self):
         t3 = tex.base58check_encode(bytes([0x1C, 0xBD]) + bytes(20))
         with self.assertRaises(tex.TexError) as c:
-            tex.tex_from_transparent(t3)
+            tex.tex_from_transparent(t3, "main")
         self.assertEqual(c.exception.code, "not-p2pkh")
+
+    def conv_err(self, t, network):
+        with self.assertRaises(tex.TexError) as c:
+            tex.tex_from_transparent(t, network)
+        return c.exception.code
+
+    def test_testnet_p2sh_has_no_tex_form(self):
+        t2 = tex.base58check_encode(bytes([0x1C, 0xBA]) + bytes(20))
+        self.assertEqual(self.conv_err(t2, "test"), "not-p2pkh")
+
+    def test_unknown_transparent_prefix(self):
+        self.assertEqual(self.conv_err(tex.base58check_encode(bytes([0x1C, 0xB9]) + bytes(20)), "main"), "unknown-prefix")
+
+    def test_conversion_follows_the_consumer_network(self):
+        tm = tex.p2pkh("test", bytes(20))
+        self.assertEqual(self.conv_err(tm, "main"), "wrong-network")
+        self.assertTrue(tex.tex_from_transparent(tm, "test").startswith("textest1"))
+        self.assertTrue(tex.tex_from_transparent(tm, "regtest").startswith("texregtest1"))
+        self.assertEqual(self.conv_err(ZIP320_T1, "test"), "wrong-network")
+
+    def test_decode_follows_the_consumer_network(self):
+        pkh = bytes(range(20))
+        textest = tex.bech32_encode("textest", pkh, "bech32m")
+        with self.assertRaises(tex.TexError) as c:
+            tex.decode_tex_for(textest, "main")
+        self.assertEqual(c.exception.code, "wrong-network")
+        self.assertEqual(tex.decode_tex_for(textest, "test")["pubkey_hash"], pkh)
+
+    def test_too_short_and_non_ascii(self):
+        self.assertEqual(self.err("tex1qqqqq"), "too-short")
+        self.assertEqual(self.err(ZIP320_TEX[:-1] + "\u0435"), "invalid-char")
 
 
 class Vectors(unittest.TestCase):
@@ -82,10 +121,16 @@ class Vectors(unittest.TestCase):
     def test_cover_valid_and_invalid_and_both_directions(self):
         cases = self.v["cases"]
         self.assertGreaterEqual(sum(c["expect"]["valid"] for c in cases), 6)
-        self.assertGreaterEqual(sum(not c["expect"]["valid"] for c in cases), 10)
+        self.assertGreaterEqual(sum(not c["expect"]["valid"] for c in cases), 20)
+        used = {c["expect"].get("error") for c in cases}
+        # Every error category is exercised, except too-long: a TEX string over 90 characters always also has the
+        # wrong payload length, so no case can fail for that reason alone (the codec still enforces the limit).
+        self.assertEqual(set(self.v["errors"]) - used, {"too-long"})
+        self.assertTrue(all(c["consumer_network"] in ("main", "test", "regtest") for c in cases))
         self.assertEqual({c["direction"] for c in cases}, {"decode", "from_transparent"})
         self.assertEqual(len({c["id"] for c in cases}), len(cases))
-        self.assertEqual([c["id"] for c in cases if c.get("optional")], ["zip320-key-regtest", "uppercase-mainnet"])
+        self.assertEqual([c["id"] for c in cases if c.get("optional")],
+                         ["zip320-key-regtest", "uppercase-mainnet", "regtest-tm-to-texregtest"])
 
 
 if __name__ == "__main__":
