@@ -63,6 +63,8 @@ The Testnet and Regtest strings match the ones in Zebra's tests, which were chec
 5. **Sign:** a hardware wallet or signer checking an output's address must accept the TEX form of its key hash.
 6. **Look up:** a node or explorer queried with a TEX address should answer for the underlying P2PKH address (Zebra 7.0.0
    returns an error for TEX in address queries, so query the P2PKH form).
+7. **Decline clearly:** if you choose not to pay TEX addresses, recognise a `tex1…` address and say so (for example
+   "This is a TEX address (ZIP 320). We don't send to these."), not "invalid address", so the user knows the address is fine.
 
 ## What these vectors do not test
 
@@ -82,6 +84,7 @@ checklist and the ZIP itself.
 | librustzcash `zcash_address` | Rejects an all-uppercase TEX address (open) | [#3306](https://github.com/zcash/librustzcash/issues/3306) |
 | Zebra | Rejects all-uppercase TEX and accepts excess padding (open) | [#12517](https://github.com/ZcashFoundation/zebra/issues/12517) |
 | blockchain_utils (Dart) | Decoded TEX payloads that weren't 20 bytes (fixed within an hour) | [#19](https://github.com/mrtnetwork/blockchain_utils/issues/19) |
+| Gem Wallet | Accepted excess padding (fixed in 2.114.98; now matches both ZIP 320 Owner decisions) | [#1957](https://github.com/gemwalletcom/wallet/pull/1957), [2.114.98](https://github.com/gemwalletcom/wallet/releases/tag/2.114.98) |
 | SSP Wallet | Rejected every `tex1` recipient (fix open, next release) | [#769](https://github.com/RunOnFlux/ssp-wallet/issues/769), [#770](https://github.com/RunOnFlux/ssp-wallet/pull/770) |
 | xchainjs `zcash-js` | Rejected valid `tex1` recipients (fixed) | [#1782](https://github.com/xchainjs/xchainjs-lib/issues/1782), [#1783](https://github.com/xchainjs/xchainjs-lib/pull/1783) |
 | Keystone firmware | A TEX output fails the transparent output address check | [#2313](https://github.com/KeystoneHQ/keystone3-firmware/issues/2313) |
@@ -104,7 +107,7 @@ A wallet that can't pay TEX can't deposit ZEC to Binance or swap ZEC through THO
   [multicoin-address-validator#20](https://github.com/christsim/multicoin-address-validator/issues/20)), SSP Wallet (fix
   in [#770](https://github.com/RunOnFlux/ssp-wallet/pull/770)).
 - **Not known:** most closed-source wallets and exchanges. If yours says "invalid address" for a `tex1…` address, the
-  address is fine and the wallet is the problem.
+  address is fine; that wallet or exchange just doesn't pay TEX addresses.
 
 Corrections welcome as issues; this list is from code reading and public notes, not a funded test of every wallet.
 
