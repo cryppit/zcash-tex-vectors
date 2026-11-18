@@ -29,7 +29,7 @@ Each case has an `id`, a `direction` (`decode`: TEX in; `from_transparent`: a t-
 - invalid: `error`, a category (see `errors` in the file). Implementations word errors differently; what matters is
   that each invalid input is rejected.
 
-30 cases: 9 valid (three optional) and 21 invalid. The invalid ones cover a Bech32 checksum where Bech32m is required,
+30 cases: 9 valid (two optional) and 21 invalid. The invalid ones cover a Bech32 checksum where Bech32m is required,
 19-, 21- and 22-byte and empty payloads (the 22-byte one is the common bug of encoding the Base58 payload with its
 prefix), excess padding (the right key hash plus one extra 5-bit group, which a decoder that drops leftover bits accepts
 as the same address), mixed case, a checksum typo, a character outside the alphabet, a non-ASCII look-alike character, a
@@ -41,17 +41,21 @@ Each invalid case fails for exactly one reason. There is no case for the 90-char
 characters always also has the wrong payload length, and a valid TEX address is exactly 42 (`tex`), 46 (`textest`) or
 49 (`texregtest`) characters long. The codec still enforces the limit.
 
-The all-uppercase case is `optional` because ZIP 320 does not say whether it must decode: ZIP 173 implies yes (QR codes
-should use uppercase) and the JavaScript reference code accepts it, but `zcash_address` and Zebra reject it. It will
-follow whatever the ZIP's Owners decide.
+The all-uppercase case is required: ZIP 173 allows all-uppercase Bech32 strings (QR codes should use them), and the
+ZIP 320 Owners confirmed on 18 Nov 2026 that a TEX Consumer must accept them, and must reject excess padding
+([zcash/zips#1468](https://github.com/zcash/zips/issues/1468), ZIP change in
+[zcash/zips#1469](https://github.com/zcash/zips/pull/1469)). `zcash_address` and Zebra reject uppercase today
+([zcash/librustzcash#3306](https://github.com/zcash/librustzcash/issues/3306),
+[ZcashFoundation/zebra#12517](https://github.com/ZcashFoundation/zebra/issues/12517)). The invalid cases are also
+proposed for zcash-test-vectors in [zcash/zcash-test-vectors#139](https://github.com/zcash/zcash-test-vectors/pull/139).
 
 The Testnet and Regtest strings match the ones in Zebra's tests, which were checked against `zcash_address`.
 
 ## Checklist for integrators
 
-1. **Parse** all required valid cases and reject all invalid ones, each on its `consumer_network`. Reject mixed case.
-   All-uppercase is optional: BIP 173 allows it, ZIP 320 does not mention it, and `zcash_address` 0.14.0 and Zebra
-   reject it.
+1. **Parse** all required valid cases and reject all invalid ones, each on its `consumer_network`. Reject mixed case,
+   and accept all-uppercase (`zcash_address` 0.14.0 and Zebra reject it today: zcash/librustzcash#3306,
+   ZcashFoundation/zebra#12517).
 2. **Display** a TEX address as `tex1…`, never as the `t1…` form of the same key hash, and keep showing it that way in
    transaction history.
 3. **Pay** to the P2PKH script of the key hash, never an empty or other script.

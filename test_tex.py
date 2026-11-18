@@ -130,7 +130,7 @@ class Vectors(unittest.TestCase):
         self.assertEqual({c["direction"] for c in cases}, {"decode", "from_transparent"})
         self.assertEqual(len({c["id"] for c in cases}), len(cases))
         self.assertEqual([c["id"] for c in cases if c.get("optional")],
-                         ["zip320-key-regtest", "uppercase-mainnet", "regtest-tm-to-texregtest"])
+                         ["zip320-key-regtest", "regtest-tm-to-texregtest"])
 
 
 if __name__ == "__main__":
