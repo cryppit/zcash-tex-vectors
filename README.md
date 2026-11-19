@@ -85,18 +85,18 @@ checklist and the ZIP itself.
 | Zebra | Rejects all-uppercase TEX and accepts excess padding (open) | [#12517](https://github.com/ZcashFoundation/zebra/issues/12517) |
 | blockchain_utils (Dart) | Decoded TEX payloads that weren't 20 bytes (fixed within an hour) | [#19](https://github.com/mrtnetwork/blockchain_utils/issues/19) |
 | Gem Wallet | Accepted excess padding (fixed in 2.114.98; now matches both ZIP 320 Owner decisions) | [#1957](https://github.com/gemwalletcom/wallet/pull/1957), [2.114.98](https://github.com/gemwalletcom/wallet/releases/tag/2.114.98) |
-| SSP Wallet | Rejected every `tex1` recipient (fix open, next release) | [#769](https://github.com/RunOnFlux/ssp-wallet/issues/769), [#770](https://github.com/RunOnFlux/ssp-wallet/pull/770) |
+| SSP Wallet | Rejected every `tex1` recipient (fixed in v2.2.3) | [#769](https://github.com/RunOnFlux/ssp-wallet/issues/769), [#770](https://github.com/RunOnFlux/ssp-wallet/pull/770), [v2.2.3](https://github.com/RunOnFlux/ssp-wallet/releases/tag/v2.2.3) |
 | xchainjs `zcash-js` | Rejected valid `tex1` recipients (fixed) | [#1782](https://github.com/xchainjs/xchainjs-lib/issues/1782), [#1783](https://github.com/xchainjs/xchainjs-lib/pull/1783) |
 | Keystone firmware | A TEX output fails the transparent output address check | [#2313](https://github.com/KeystoneHQ/keystone3-firmware/issues/2313) |
 | zecblock explorer | Reported TEX as an invalid transparent address (fixed) | [#136](https://github.com/Kenbak/zecblock/issues/136), [#284](https://github.com/Kenbak/zecblock/pull/284) |
 
-## Who can pay a TEX address (18 Nov 2026)
+## Who can pay a TEX address (19 Nov 2026)
 
 Binance gives every ZEC user a `tex1…` deposit address, and THORChain's ZEC inbound address is often a TEX address too.
 A wallet that can't pay TEX can't deposit ZEC to Binance or swap ZEC through THORChain.
 
 - **Can pay TEX:** Zodl, Zingo, Zkool, Edge, Unstoppable, Zallet, Gem, Vultisig, OneKey, KeepKey, Coin Wallet, Vizor,
-  Zafu, Noir, Zapp, ZChat, Laurel, from their code or release notes. Zodl pays from a shielded balance in two steps, and
+  Zafu, Noir, Zapp, ZChat, Laurel and SSP Wallet (since [v2.2.3](https://github.com/RunOnFlux/ssp-wallet/releases/tag/v2.2.3)), from their code or release notes. Zodl pays from a shielded balance in two steps, and
   blocks TEX sends from Keystone and Ledger accounts.
 - **Can't yet (issue open):** Cake Wallet ([#3871](https://github.com/cake-tech/cake_wallet/issues/3871)), Brave Wallet
   ([#61975](https://github.com/brave/brave-browser/issues/61975)), Ledger Live
@@ -104,8 +104,7 @@ A wallet that can't pay TEX can't deposit ZEC to Binance or swap ZEC through THO
   ([#4581](https://github.com/trezor/trezor-firmware/issues/4581),
   [#35232](https://github.com/trezor/trezor-suite/issues/35232)), Keystone
   ([#2313](https://github.com/KeystoneHQ/keystone3-firmware/issues/2313)), ShapeShift (upstream
-  [multicoin-address-validator#20](https://github.com/christsim/multicoin-address-validator/issues/20)), SSP Wallet (fix
-  in [#770](https://github.com/RunOnFlux/ssp-wallet/pull/770)).
+  [multicoin-address-validator#20](https://github.com/christsim/multicoin-address-validator/issues/20)).
 - **Not known:** most closed-source wallets and exchanges. If yours says "invalid address" for a `tex1…` address, the
   address is fine; that wallet or exchange just doesn't pay TEX addresses.
 
